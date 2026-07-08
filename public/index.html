@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>漫画について理解しよう📚</title>
+  <style>
+    :root { --bg: #06060d; --surface: rgba(18,18,30,0.85); --surface2: rgba(25,25,42,0.7); --text: #e8e8f0; --text2: #8888a0; --accent: #5865f2; --accent2: #7788ff; --border: rgba(255,255,255,0.05); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    header { position: sticky; top: 0; z-index: 100; background: var(--surface); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 16px; }
+    .logo { font-size: 1.3rem; font-weight: 900; text-align: center; margin-bottom: 12px; color: var(--accent); }
+    #searchBox { display: flex; gap: 8px; }
+    #searchBox input { flex: 1; padding: 10px 16px; border-radius: 100px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 14px; }
+    #searchBox button { padding: 10px 18px; border-radius: 100px; border: none; background: var(--accent); color: #fff; font-weight: 700; cursor: pointer; font-size: 14px; }
+    .container { padding: 12px 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .card { background: var(--surface); border-radius: 14px; overflow: hidden; cursor: pointer; border: 1px solid var(--border); transition: 0.3s; }
+    .card:hover { transform: translateY(-4px); border-color: var(--accent); }
+    .card img { width: 100%; height: 200px; object-fit: cover; background: var(--surface2); }
+    .card-info { padding: 10px; }
+    .card-title { font-size: 12px; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .chapter-item { padding: 12px; margin: 4px 0; background: var(--surface); border-radius: 10px; cursor: pointer; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .chapter-item:hover { border-color: var(--accent); }
+    #status { text-align: center; padding: 40px; color: var(--text2); }
+    ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-thumb { background: rgba(88,101,242,0.3); border-radius: 10px; }
+    .back-btn { display: inline-block; padding: 6px 12px; margin-bottom: 8px; background: var(--surface2); border-radius: 16px; cursor: pointer; font-size: 13px; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">漫画について理解しよう📚</div>
+    <div id="searchBox"><input type="text" id="searchInput" placeholder="検索..."><button onclick="doSearch()">🔍</button></div>
+  </header>
+  <div class="container">
+    <div id="backArea"></div>
+    <div id="status">読み込み中...</div>
+    <div id="content" class="grid"></div>
+  </div>
+  <script>
+    var currentChapters = [];
+    var currentChapterIndex = 0;
+    var previousContent = '';
+    
+    function api(url) { return fetch(url).then(function(r){return r.json()}); }
+
+    function doSearch() {
+      var q = document.getElementById('searchInput').value.trim();
+      if (!q) return;
+      document.getElementById('status').innerText = '検索中...';
+      api('/api/mangarw/search?q=' + encodeURIComponent(q)).then(function(d) { showList(d.results); });
+    }
+
+    function showList(items) {
+      document.getElementById('status').innerHTML = '';
+      var c = document.getElementById('content'); c.innerHTML = ''; c.className = 'grid';
+      if (!items || items.length === 0) { document.getElementById('status').innerHTML = '<p>ありません</p>'; return; }
+      items.forEach(function(item) {
+        var card = document.createElement('div'); card.className = 'card';
+        card.innerHTML = '<img src="' + (item.thumb || '') + '" onerror="this.style.display=\'none\'"><div class="card-info"><div class="card-title">' + (item.title || '') + '</div></div>';
+        card.onclick = function() { openItem(item); };
+        c.appendChild(card);
+      });
+    }
+
+    function openItem(item) {
+      previousContent = document.getElementById('content').innerHTML;
+      document.getElementById('backArea').innerHTML = '<span class="back-btn" onclick="goBack()">← 戻る</span>';
+      document.getElementById('status').innerText = '取得中...';
+      api('/api/mangarw/chapters?url=' + encodeURIComponent(item.url)).then(function(d) {
+        currentChapters = d.chapters || [];
+        showChapterList(currentChapters);
+      });
+    }
+
+    function goBack() {
+      document.getElementById('content').innerHTML = previousContent;
+      document.getElementById('content').className = 'grid';
+      document.getElementById('backArea').innerHTML = '';
+    }
+
+    function showChapterList(chapters) {
+      var c = document.getElementById('content'); c.innerHTML = ''; c.className = '';
+      document.getElementById('status').innerHTML = '';
+      if (!chapters.length) { document.getElementById('status').innerHTML = '<p>話数なし</p>'; return; }
+      chapters.forEach(function(ch, i) {
+        var div = document.createElement('div'); div.className = 'chapter-item';
+        div.innerHTML = '<div><b>' + ch.title + '</b><br><small>' + (ch.date||'') + '</small></div><span>▶</span>';
+        div.onclick = function() {
+          currentChapterIndex = i;
+          document.getElementById('status').innerText = '読み込み中...';
+          api('/api/mangarw/images-by-id?id=' + ch.id).then(function(d) { showViewer(d.urls); });
+        };
+        c.appendChild(div);
+      });
+    }
+
+    function showViewer(urls) {
+      var v = document.createElement('div');
+      v.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:200;overflow-y:auto;padding:16px;display:flex;flex-direction:column;align-items:center;';
+      var x = document.createElement('span'); x.textContent = '✕'; x.style.cssText = 'position:fixed;top:10px;right:20px;font-size:30px;color:#fff;cursor:pointer;z-index:201;';
+      x.onclick = function() { v.remove(); }; v.appendChild(x);
+      urls.forEach(function(u) { var img = document.createElement('img'); img.src = u; img.style.cssText = 'max-width:100%;height:auto;margin-bottom:8px;'; v.appendChild(img); });
+      document.body.appendChild(v);
+    }
+
+    document.getElementById('searchInput').onkeydown = function(e) { if (e.key === 'Enter') doSearch(); };
+    api('/api/mangarw/browse').then(function(d) { showList(d.results); });
+  </script>
+</body>
+</html>
