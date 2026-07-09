@@ -73,22 +73,16 @@ async function fetchMangarwImageUrlsById(id) {
     
     let matches = html.match(/\/_img_proxy_\/[^"'\s]+\.(webp|jpg|png|jpeg)/gi);
     if (!matches) {
-      matches = html.match(/https:\/\/nyonyo\.wbfyqqgzxj\.workers\.dev\/[^"'\s]+\.(webp|jpg|png|jpeg)/gi);
+      matches = html.match(/https:\/\/nyonyo\.wbfyqqgzxj\.workers\.dev\/\?url=[^"'\s]+\.(webp|jpg|png|jpeg)/gi);
     }
     if (!matches) {
       matches = html.match(/https:\/\/storage\.mangabuzz\.org\/[^"'\s]+\.(webp|jpg|png|jpeg)/gi);
     }
-    if (!matches) {
-      const imgTags = html.match(/<img[^>]+src="([^"]+)"/gi);
-      if (imgTags) {
-        matches = imgTags.map(tag => {
-          const src = tag.match(/src="([^"]+)"/);
-          return src ? src[1] : '';
-        }).filter(Boolean);
-      }
-    }
     
     if (!matches) return [];
+    
+    // faviconを除外
+    matches = matches.filter(url => !url.includes('favicon'));
     
     return [...new Set(matches)].map(url => {
       if (url.startsWith('/_img_proxy_/')) return MANGARW_API + url;
