@@ -80,10 +80,7 @@ async function fetchMangarwImageUrlsById(id) {
     }
     
     if (!matches) return [];
-    
-    // faviconを除外
     matches = matches.filter(url => !url.includes('favicon'));
-    
     return [...new Set(matches)].map(url => {
       if (url.startsWith('/_img_proxy_/')) return MANGARW_API + url;
       return url;
@@ -91,8 +88,11 @@ async function fetchMangarwImageUrlsById(id) {
   } catch (e) { return []; }
 }
 async function searchMangarw(query) {
-  try { const apiUrl = MANGARW_API + '/search-ajax?keyword=' + encodeURIComponent(query); const html = await fetchHtml(apiUrl, 'https://mangarw.com/'); return extractMangarwList(html); }
-  catch (e) { return []; }
+  try {
+    const apiUrl = MANGARW_API + '/search-ajax?keyword=' + encodeURIComponent(query);
+    const html = await fetchHtml(apiUrl, 'https://mangarw.com/');
+    return extractMangarwList(html);
+  } catch (e) { return []; }
 }
 function extractMangarwList(html) {
   const results = [];
