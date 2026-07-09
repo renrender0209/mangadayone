@@ -32,6 +32,7 @@ async function translateToEnglish(text) {
   } catch (e) { return text; }
 }
 
+const MANGARW_API = 'https://nyonyo.wbfyqqgzxj.workers.dev';
 
 async function fetchMangarwBrowse() {
   try { const html = await fetchHtml('https://mangarw.com/browse', 'https://mangarw.com/'); return extractMangarwBrowseList(html); }
@@ -66,16 +67,16 @@ async function fetchMangarwChapters(mangaUrl) {
 }
 async function fetchMangarwImageUrlsById(id) {
   try {
-    const apiUrl = 'https://mangarw-api.myproxy0108.workers.dev/read?id=' + id;
+    const apiUrl = MANGARW_API + '/read?id=' + id;
     const res = await fetch(apiUrl, { headers: { 'Referer': 'https://mangarw.com/', 'User-Agent': 'Mozilla/5.0' }, redirect: 'follow' });
     const html = await res.text();
-    const regex = /https:\/\/mangarw-api\.myproxy0108\.workers\.dev\/_img_proxy_\/[^"'\s]+\.(webp|jpg|png|jpeg)/gi;
+    const regex = /https:\/\/nyonyo\.wbfyqqgzxj\.workers\.dev\/_img_proxy_\/[^"'\s]+\.(webp|jpg|png|jpeg)/gi;
     const matches = html.match(regex); if (!matches) return [];
     return [...new Set(matches)];
   } catch (e) { return []; }
 }
 async function searchMangarw(query) {
-  try { const apiUrl = 'https://mangarw-api.myproxy0108.workers.dev/search-ajax?keyword=' + encodeURIComponent(query); const html = await fetchHtml(apiUrl, 'https://mangarw.com/'); return extractMangarwList(html); }
+  try { const apiUrl = MANGARW_API + '/search-ajax?keyword=' + encodeURIComponent(query); const html = await fetchHtml(apiUrl, 'https://mangarw.com/'); return extractMangarwList(html); }
   catch (e) { return []; }
 }
 function extractMangarwList(html) {
