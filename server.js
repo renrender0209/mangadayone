@@ -96,13 +96,18 @@ async function searchMangarw(query) {
 }
 function extractMangarwList(html) {
   const results = [];
-  const regex = /<a href="(\/manga\/[^"]+)"[^>]*>\s*<div[^>]*>\s*<img src="([^"]+)"[^>]*alt="([^"]*)"[^>]*>/gi;
+  const regex = /<a href="https:\/\/nyonyo\.wbfyqqgzxj\.workers\.dev\/manga\/([^"]+)\/(\d+)"[^>]*>\s*<div[^>]*>\s*<img src="([^"]+)"[^>]*alt="([^"]*)"[^>]*>/gi;
   let match;
   while ((match = regex.exec(html)) !== null) {
-    const path = match[1], thumbRaw = match[2], title = match[3].trim(), url = 'https://mangarw.com' + path;
+    const slug = match[1];
+    const id = match[2];
+    const thumbRaw = match[3];
+    const title = match[4].trim();
+    const url = 'https://mangarw.com/manga/' + slug + '/' + id;
     const thumb = thumbRaw.startsWith('https') ? thumbRaw : 'https://mangarw.com' + thumbRaw;
-    const idMatch = path.match(/\/(\d+)$/), id = idMatch ? idMatch[1] : '';
-    if (!results.some(r => r.url === url)) results.push({ title, url, thumb, id, type: 'mangarw' });
+    if (!results.some(r => r.url === url)) {
+      results.push({ title, url, thumb, id, type: 'mangarw' });
+    }
   }
   return results.slice(0, 20);
 }
