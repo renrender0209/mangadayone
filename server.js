@@ -70,9 +70,15 @@ async function fetchMangarwImageUrlsById(id) {
     const apiUrl = MANGARW_API + '/read?id=' + id;
     const res = await fetch(apiUrl, { headers: { 'Referer': 'https://mangarw.com/', 'User-Agent': 'Mozilla/5.0' }, redirect: 'follow' });
     const html = await res.text();
-    const regex = /https:\/\/nyonyo\.wbfyqqgzxj\.workers\.dev\/_img_proxy_\/[^"'\s]+\.(webp|jpg|png|jpeg)/gi;
-    const matches = html.match(regex); if (!matches) return [];
-    return [...new Set(matches)];
+    
+    // Workersが返すプロキシパスを抽出（/_img_proxy_/...）
+    const regex = /\/_img_proxy_\/[^"'\s]+\.(webp|jpg|png|jpeg)/gi;
+    const matches = html.match(regex);
+    
+    if (!matches) return [];
+    
+    // 抽出したパスを完全なURLに変換
+    return [...new Set(matches)].map(path => MANGARW_API + path);
   } catch (e) { return []; }
 }
 async function searchMangarw(query) {
